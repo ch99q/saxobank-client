@@ -1,5 +1,16 @@
-// deno-lint-ignore-file no-explicit-any
-import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Any = any;
+
+// Browser-compatible base64 encoding
+const encodeBase64 = (str: string): string => {
+  if (typeof btoa !== 'undefined') {
+    // Browser environment
+    return btoa(str);
+  } else {
+    // Node.js environment
+    return Buffer.from(str, 'utf-8').toString('base64');
+  }
+};
 
 const INTERNAL = Symbol("internal");
 const lock = <T>(obj: T): T => {
@@ -36,8 +47,16 @@ export interface Account {
 }
 
 export interface Balance {
-  /** The account balance */
-  balance: number;
+  /** The current cash balance of the account/client. */
+  cashBalance: number;
+  /** The current cash available for trading in the account/client. */
+  cashAvailable: number;
+  totalValue: number;
+  /** Sum of maintenance margin used for current positions on the account/client. */
+  marginUsed: number;
+  /** Margin available for opening new positions. */
+  marginAvailable: number;
+  unrealizedPnL: number;
   /** The account currency */
   currency: string;
 }
@@ -90,25 +109,38 @@ export interface Order {
   exchange_id: string;
 }
 
-const API_ENDPOINT = Deno.env.get("SAXOPOINT_GATEWAY") ?? "https://gateway.saxobank.com/sim/openapi";
-const AUTH_ENDPOINT = Deno.env.get("SAXOPOINT_AUTH") ?? "https://sim.logonvalidation.net";
+export interface AppConfig {
+  /** Saxobank app key */
+  appKey: string;
+  /** Saxobank app secret */
+  appSecret: string;
+  /** OAuth redirect URI */
+  redirectUri: string;
+  /** API gateway endpoint (defaults to sim) */
+  apiEndpoint?: string;
+  /** Auth endpoint (defaults to sim) */
+  authEndpoint?: string;
+}
 
-const SAXO_APP_KEY = Deno.env.get("SAXO_APP_KEY")!;
-const SAXO_APP_SECRET = Deno.env.get("SAXO_APP_SECRET")!;
-const SAXO_APP_REDIRECT_URI = Deno.env.get("SAXO_APP_REDIRECT_URI")!;
+type Credentials = {
+  type: "account";
+  username: string;
+  password: string;
+} | {
+  type: "token";
+  token: string;
+}
 
-if (!SAXO_APP_KEY || !SAXO_APP_SECRET || !SAXO_APP_REDIRECT_URI) throw new Error("Missing environment variables, SAXO_APP_KEY, SAXO_APP_SECRET, SAXO_APP_REDIRECT_URI");
-
-const authenticate = async (username: string, password: string): Promise<TokenResponse> => {
+const authenticate = async (username: string, password: string, config: AppConfig): Promise<TokenResponse> => {
   const STATE = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   // Step 1: Generate auth URL and fetch initial login page
   const params = new URLSearchParams({
     response_type: "code",
-    client_id: SAXO_APP_KEY,
+    client_id: config.appKey,
     state: STATE,
-    redirect_uri: SAXO_APP_REDIRECT_URI,
+    redirect_uri: config.redirectUri,
   });
-  const authUrl = `${AUTH_ENDPOINT}/authorize?${params.toString()}`;
+  const authUrl = `${config.authEndpoint}/authorize?${params.toString()}`;
   const initialResponse = await fetch(authUrl, { redirect: "manual" });
   const loginUrl = initialResponse.headers.get("location");
   if (!loginUrl || !loginUrl.includes("saxobank.com")) {
@@ -155,8 +187,8 @@ const authenticate = async (username: string, password: string): Promise<TokenRe
   }
 
   // Step 4: Exchange authorization code for an access token
-  const credentials = encodeBase64(`${SAXO_APP_KEY}:${SAXO_APP_SECRET}`);
-  const tokenResponse = await fetch(`${AUTH_ENDPOINT}/token`, {
+  const credentials = encodeBase64(`${config.appKey}:${config.appSecret}`);
+  const tokenResponse = await fetch(`${config.authEndpoint}/token`, {
     method: "POST",
     headers: {
       "Authorization": `Basic ${credentials}`,
@@ -165,7 +197,7 @@ const authenticate = async (username: string, password: string): Promise<TokenRe
     body: new URLSearchParams({
       grant_type: "authorization_code",
       code: authCode,
-      redirect_uri: SAXO_APP_REDIRECT_URI,
+      redirect_uri: config.redirectUri,
     }),
   });
 
@@ -173,11 +205,11 @@ const authenticate = async (username: string, password: string): Promise<TokenRe
     throw new Error(`Failed to fetch token: ${tokenResponse.statusText}`);
   }
 
-  return await tokenResponse.json();
+  return await tokenResponse.json() as TokenResponse;
 };
 
-const request = async (token: string, endpoint: string, queryParams: Record<string, string | number> = {}, method: string = "GET"): Promise<any> => {
-  const url = new URL(`${API_ENDPOINT}${endpoint}`);
+const request = async (token: string, endpoint: string, apiEndpoint: string, queryParams: Record<string, string | number> = {}, method: string = "GET"): Promise<Any> => {
+  const url = new URL(`${apiEndpoint}${endpoint}`);
   Object.entries(queryParams).forEach(([key, value]) => url.searchParams.append(key, String(value)));
   const response = await fetch(url.href, {
     method: method,
@@ -190,7 +222,7 @@ const request = async (token: string, endpoint: string, queryParams: Record<stri
   return response.json();
 };
 
-const handleError = (response: any) => {
+const handleError = (response: Any) => {
   if (response?.ErrorCode) {
     const code = response.ErrorCode;
     const message = response.Message;
@@ -204,15 +236,22 @@ const handleError = (response: any) => {
   return response;
 };
 
-export const createClient = async (username: string, password: string) => {
-  const token = await authenticate(username, password);
+export const createClient = async (auth: Credentials, config: AppConfig) => {
+  // Provide default endpoints for simulation environment
+  const clientConfig: Required<AppConfig> = {
+    apiEndpoint: "https://gateway.saxobank.com/sim/openapi",
+    authEndpoint: "https://sim.logonvalidation.net",
+    ...config,
+  };
 
-  const client_data = await request(token.access_token, "/port/v1/clients/me").then(handleError);
+  const token = auth.type === "token" ? { access_token: auth.token } : await authenticate(auth.username, auth.password, clientConfig);
+
+  const client_data = await request(token.access_token, "/port/v1/clients/me", clientConfig.apiEndpoint).then(handleError);
 
   const client_id = client_data.ClientId;
   const client_key = client_data.ClientKey;
 
-  const getPositions = async (account_key?: string) => (await request(token.access_token, account_key ? `/port/v1/positions?ClientKey=${client_key}&AccountKey=${account_key}` : "/port/v1/positions/me").catch(handleError).then(handleError))?.Data?.map(({ PositionId, PositionBase, PositionView }: any) => (lock({
+  const getPositions = async (account_key?: string) => (await request(token.access_token, account_key ? `/port/v1/positions?ClientKey=${client_key}&AccountKey=${account_key}` : "/port/v1/positions/me", clientConfig.apiEndpoint).catch(handleError).then(handleError))?.Data?.map(({ PositionId, PositionBase, PositionView }: Any) => (lock({
     id: PositionId,
     uic: PositionBase.Uic,
     client_id,
@@ -226,7 +265,7 @@ export const createClient = async (username: string, password: string) => {
     [INTERNAL]: { PositionId, PositionBase, PositionView },
   }))) as Position[];
 
-  const getOrders = async (account_key?: string) => (await request(token.access_token, account_key ? `/port/v1/orders?ClientKey=${client_key}&AccountKey=${account_key}` : "/port/v1/orders/me").catch(handleError).then(handleError))?.Data?.map((order: any) => (lock({
+  const getOrders = async (account_key?: string) => (await request(token.access_token, account_key ? `/port/v1/orders?ClientKey=${client_key}&AccountKey=${account_key}` : "/port/v1/orders/me", clientConfig.apiEndpoint).catch(handleError).then(handleError))?.Data?.map((order: Any) => (lock({
     id: order.OrderId,
     time: new Date(order.OrderTime),
     uic: order.Uic,
@@ -248,8 +287,8 @@ export const createClient = async (username: string, password: string) => {
     [INTERNAL]: order,
   }))) as Order[];
 
-  const getBalance = async (account_key: string) => await request(token.access_token, `/port/v1/balances?ClientKey=${client_key}&AccountKey=${account_key}`).catch(handleError).then(handleError).then((response: any) => (lock({
-    balance: response.CashBalance,
+  const getBalance = async (account_key: string) => await request(token.access_token, `/port/v1/balances?ClientKey=${client_key}&AccountKey=${account_key}`, clientConfig.apiEndpoint).catch(handleError).then(handleError).then((response: Any) => (lock({
+    balance: response.CashAvailableForTrading,
     currency: response.Currency,
     [INTERNAL]: response
   }))) as Balance;
@@ -259,7 +298,7 @@ export const createClient = async (username: string, password: string) => {
     if (order_type === "market" && (price || stop_limit)) throw new Error("Market orders cannot have a price or stop limit");
     if (["limit", "stop_limit"].includes(order_type) && !price) throw new Error("Limit orders require a price");
     if (["market", "stop", "limit", "stop_limit"].includes(order_type) === false) throw new Error("Invalid order type");
-    return await fetch(`${API_ENDPOINT}/trade/v2/orders`, {
+    return await fetch(`${clientConfig.apiEndpoint}/trade/v2/orders`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token.access_token}`,
@@ -286,13 +325,13 @@ export const createClient = async (username: string, password: string) => {
       .then((response) => response.json())
       .then(handleError)
       .then((response) => response &&
-        request(token.access_token, `/trade/v2/orders/${client_key}/${response.OrderId}`)
+        request(token.access_token, `/trade/v2/orders/${client_key}/${response.OrderId}`, clientConfig.apiEndpoint)
           .catch(() => getPositions(account_key)
             .then((positions) => positions.find((position) => internal(position).PositionBase.SourceOrderId === response.OrderId)))
       );
   }
 
-  const getAccounts = async () => (await request(token.access_token, "/port/v1/accounts/me").catch(handleError))?.Data?.map((account: any) => (lock({
+  const getAccounts = async () => (await request(token.access_token, "/port/v1/accounts/me", clientConfig.apiEndpoint).catch(handleError))?.Data?.map((account: Any) => (lock({
     id: account.AccountId,
     key: account.AccountKey,
     active: account.Active,

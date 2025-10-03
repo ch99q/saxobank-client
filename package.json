@@ -1,0 +1,49 @@
+{
+  "name": "@ch99q/sxc",
+  "version": "1.0.0",
+  "description": "Saxobank Client",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
+    "prepublishOnly": "bun run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "saxobank",
+    "client",
+    "trading",
+    "data",
+    "banking",
+    "portfolio"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "bun-types": "latest",
+    "dotenv": "^17.2.3",
+    "tsdown": "^0.15.6",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "bun@1.2.23"
+}
