@@ -1,7 +1,7 @@
 {
   "name": "@ch99q/sxc",
-  "version": "1.0.0",
-  "description": "Saxobank Client",
+  "version": "0.1.0",
+  "description": "A client for Saxobank's OpenAPI with trading, portfolio management, and authentication.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
