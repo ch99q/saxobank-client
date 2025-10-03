@@ -41,43 +41,43 @@ This project adheres to a code of conduct that we expect all contributors to fol
 ### Development Setup
 
 1. **Fork and Clone the Repository**
-   \`\`\`bash
+   ```bash
    git clone https://github.com/ch99q/sxc.git
    cd sxc
-   \`\`\`
+   ```
 
 2. **Install Dependencies**
-   \`\`\`bash
+   ```bash
    bun install
    # or
    npm install
-   \`\`\`
+   ```
 
 3. **Build the Project**
-   \`\`\`bash
+   ```bash
    bun run build
-   \`\`\`
+   ```
 
 4. **Set Up Environment Variables**
    
-   Create a \`.env\` file for testing:
-   \`\`\`bash
+   Create a `.env` file for testing:
+   ```bash
    SAXO_APP_KEY=your-app-key
    SAXO_APP_SECRET=your-app-secret
    SAXO_USERNAME=your-username
    SAXO_PASSWORD=your-password
    SAXO_REDIRECT_URI=http://localhost:5000/callback
-   \`\`\`
+   ```
 
 5. **Run Tests**
-   \`\`\`bash
+   ```bash
    bun test
-   \`\`\`
+   ```
 
 6. **Type Check**
-   \`\`\`bash
+   ```bash
    bun run typecheck
-   \`\`\`
+   ```
 
 ## How to Contribute
 
@@ -102,11 +102,11 @@ We welcome several types of contributions:
 
 ### 1. Create a Feature Branch
 
-\`\`\`bash
+```bash
 git checkout -b feature/your-feature-name
 # or
 git checkout -b fix/issue-description
-\`\`\`
+```
 
 ### 2. Make Your Changes
 
@@ -119,33 +119,33 @@ git checkout -b fix/issue-description
 
 Use clear, descriptive commit messages:
 
-\`\`\`bash
+```bash
 git commit -m "feat: add support for trailing stop orders
 
 - Add trailing stop order type to OrderOptions
 - Update type definitions
 - Add tests for trailing stop functionality
 - Update documentation with examples"
-\`\`\`
+```
 
 #### Commit Message Format
 
 We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
-- \`feat:\` - A new feature
-- \`fix:\` - A bug fix
-- \`docs:\` - Documentation only changes
-- \`style:\` - Changes that don't affect code meaning (whitespace, formatting)
-- \`refactor:\` - Code change that neither fixes a bug nor adds a feature
-- \`perf:\` - Code change that improves performance
-- \`test:\` - Adding missing tests or correcting existing tests
-- \`chore:\` - Changes to the build process or auxiliary tools
+- `feat:` - A new feature
+- `fix:` - A bug fix
+- `docs:` - Documentation only changes
+- `style:` - Changes that don't affect code meaning (whitespace, formatting)
+- `refactor:` - Code change that neither fixes a bug nor adds a feature
+- `perf:` - Code change that improves performance
+- `test:` - Adding missing tests or correcting existing tests
+- `chore:` - Changes to the build process or auxiliary tools
 
 ### 4. Push and Create Pull Request
 
-\`\`\`bash
+```bash
 git push origin feature/your-feature-name
-\`\`\`
+```
 
 Then create a pull request through GitHub with:
 
@@ -166,7 +166,7 @@ Then create a pull request through GitHub with:
 
 - Use TypeScript for all new code
 - Provide proper type definitions
-- Avoid \`any\` types when possible
+- Avoid `any` types when possible
 - Use meaningful variable and function names
 - Add JSDoc comments for public APIs
 
@@ -182,7 +182,7 @@ We use automated formatting, but here are the general principles:
 
 ### File Organization
 
-\`\`\`
+```
 src/
 ├── index.ts           # Main client implementation
 test/
@@ -190,7 +190,7 @@ test/
 ├── integration/       # Integration tests
 ├── unit/              # Unit tests
 └── utils.ts           # Test utilities
-\`\`\`
+```
 
 ### API Design Principles
 
@@ -204,7 +204,7 @@ test/
 
 ### Running Tests
 
-\`\`\`bash
+```bash
 # Run all tests
 bun test
 
@@ -213,7 +213,7 @@ bun test:watch
 
 # Run specific test file
 bun test test/client/account.test.ts
-\`\`\`
+```
 
 ### Writing Tests
 
@@ -225,7 +225,7 @@ bun test test/client/account.test.ts
 
 Example test structure:
 
-\`\`\`typescript
+```typescript
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createClient } from '../src/index.js';
 
@@ -266,7 +266,7 @@ describe('Account Operations', () => {
     }
   });
 });
-\`\`\`
+```
 
 ### Test Categories
 
@@ -294,7 +294,7 @@ describe('Account Operations', () => {
 
 Example:
 
-\`\`\`typescript
+```typescript
 /**
  * Places a buy order for the specified instrument
  * 
@@ -307,18 +307,18 @@ Example:
  * @returns Promise resolving to Order or Position
  * 
  * @example
- * \`\`\`typescript
+ * ```typescript
  * // Place a market order
  * const order = await account.buy(21, 100000, "market");
  * 
  * // Place a limit order
  * const limitOrder = await account.buy(21, 100000, "limit", 1.1000);
- * \`\`\`
+ * ```
  */
 export function buy(/* ... */): Promise<Position | Order> {
   // Implementation
 }
-\`\`\`
+```
 
 ### README Updates
 
@@ -343,7 +343,7 @@ When reporting bugs, please include:
 
 Use this template:
 
-\`\`\`markdown
+```markdown
 **Bug Description**
 A clear description of what the bug is.
 
@@ -357,10 +357,10 @@ Steps to reproduce the behavior:
 What you expected to happen.
 
 **Code Sample**
-\`\`\`typescript
+```typescript
 // Minimal code sample that reproduces the issue
 // NEVER include real credentials!
-\`\`\`
+```
 
 **Environment**
 - OS: [e.g. macOS 14.0]
@@ -370,7 +370,7 @@ What you expected to happen.
 
 **Additional Context**
 Any other context about the problem.
-\`\`\`
+```
 
 ### Security Issues
 
@@ -392,7 +392,7 @@ We welcome feature requests! Please:
 
 Use this template:
 
-\`\`\`markdown
+```markdown
 **Feature Description**
 A clear description of what you want to happen.
 
@@ -407,22 +407,22 @@ Any alternative approaches you've considered.
 
 **Additional Context**
 Any other context, mockups, or examples.
-\`\`\`
+```
 
 ## Development Workflow
 
 ### Branch Naming
 
-- \`feature/description\` - New features
-- \`fix/description\` - Bug fixes
-- \`docs/description\` - Documentation updates
-- \`refactor/description\` - Code refactoring
-- \`test/description\` - Test additions/improvements
+- `feature/description` - New features
+- `fix/description` - Bug fixes
+- `docs/description` - Documentation updates
+- `refactor/description` - Code refactoring
+- `test/description` - Test additions/improvements
 
 ### Release Process
 
-1. Update version in \`package.json\`
-2. Update \`CHANGELOG.md\`
+1. Update version in `package.json`
+2. Update `CHANGELOG.md`
 3. Create release tag
 4. Publish to npm
 5. Create GitHub release

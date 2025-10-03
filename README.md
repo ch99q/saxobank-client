@@ -18,7 +18,7 @@ A comprehensive TypeScript/JavaScript client for Saxobank's OpenAPI. This librar
 
 ## Installation
 
-\`\`\`bash
+```bash
 # Using npm
 npm install @ch99q/sxc
 
@@ -30,13 +30,13 @@ pnpm add @ch99q/sxc
 
 # Using bun
 bun add @ch99q/sxc
-\`\`\`
+```
 
 ## Quick Start
 
 ### Authentication
 
-\`\`\`typescript
+```typescript
 import { createClient } from "@ch99q/sxc";
 
 // Create client with username/password
@@ -66,12 +66,12 @@ const client = await createClient(
   }
 );
 
-console.log(\`Connected as: \${client.name} (\${client.id})\`);
-\`\`\`
+console.log(`Connected as: \${client.name} (\${client.id})`);
+```
 
 ### Get Accounts and Balances
 
-\`\`\`typescript
+```typescript
 // Get all accounts
 const accounts = await client.getAccounts();
 
@@ -79,25 +79,25 @@ const accounts = await client.getAccounts();
 const account = accounts[0];
 const balance = await account.getBalance();
 
-console.log(\`Balance: \${balance.cashAvailable} \${balance.currency}\`);
-console.log(\`Total Value: \${balance.totalValue} \${balance.currency}\`);
-console.log(\`Margin Used: \${balance.marginUsed} \${balance.currency}\`);
-console.log(\`Unrealized P&L: \${balance.unrealizedPnL} \${balance.currency}\`);
-\`\`\`
+console.log(`Balance: \${balance.cashAvailable} \${balance.currency}`);
+console.log(`Total Value: \${balance.totalValue} \${balance.currency}`);
+console.log(`Margin Used: \${balance.marginUsed} \${balance.currency}`);
+console.log(`Unrealized P&L: \${balance.unrealizedPnL} \${balance.currency}`);
+```
 
 ### View Positions
 
-\`\`\`typescript
+```typescript
 // Get positions for an account
 const positions = await account.getPositions();
 
 positions.forEach(position => {
-  console.log(\`Position \${position.id}:\`);
-  console.log(\`  Instrument: \${position.uic}\`);
-  console.log(\`  Quantity: \${position.quantity}\`);
-  console.log(\`  Price: \${position.price}\`);
-  console.log(\`  Value: \${position.value} \${position.currency}\`);
-  console.log(\`  Status: \${position.status}\`);
+  console.log(`Position \${position.id}:`);
+  console.log(`  Instrument: \${position.uic}`);
+  console.log(`  Quantity: \${position.quantity}`);
+  console.log(`  Price: \${position.price}`);
+  console.log(`  Value: \${position.value} \${position.currency}`);
+  console.log(`  Status: \${position.status}`);
 });
 
 // Get net positions (aggregated)
@@ -109,11 +109,11 @@ const closedPositions = await client.getClosedPositions(
   new Date("2024-01-01"),
   new Date()
 );
-\`\`\`
+```
 
 ### Place Orders
 
-\`\`\`typescript
+```typescript
 // Place a market buy order
 const marketOrder = await account.buy(
   21,              // UIC (instrument ID)
@@ -154,20 +154,20 @@ const stopOrder = await account.sell(
     duration: { durationType: "DayOrder" }
   }
 );
-\`\`\`
+```
 
 ### Manage Orders
 
-\`\`\`typescript
+```typescript
 // Get all orders
 const orders = await account.getOrders();
 
 orders.forEach(order => {
-  console.log(\`Order \${order.id}:\`);
-  console.log(\`  Type: \${order.type} \${order.order_type}\`);
-  console.log(\`  Price: \${order.price}\`);
-  console.log(\`  Quantity: \${order.quantity}\`);
-  console.log(\`  Status: \${order.status}\`);
+  console.log(`Order \${order.id}:`);
+  console.log(`  Type: \${order.type} \${order.order_type}`);
+  console.log(`  Price: \${order.price}`);
+  console.log(`  Quantity: \${order.quantity}`);
+  console.log(`  Status: \${order.status}`);
 });
 
 // Modify an existing order
@@ -182,11 +182,11 @@ await account.cancelOrder("order-id");
 
 // Cancel all orders for an instrument
 await account.cancelAllOrders(21, "FxSpot");
-\`\`\`
+```
 
 ### Pre-check Orders
 
-\`\`\`typescript
+```typescript
 // Validate an order before placing it
 const preCheckResult = await client.preCheckOrder({
   accountKey: account.key,
@@ -199,67 +199,67 @@ const preCheckResult = await client.preCheckOrder({
 });
 
 console.log("Order validation:", preCheckResult);
-\`\`\`
+```
 
 ## API Reference
 
 ### Client
 
-#### \`createClient(credentials, config)\`
+#### `createClient(credentials, config)`
 
 Creates a new Saxobank client.
 
 **Parameters:**
-- \`credentials\`: Either \`{ type: "account", username, password }\` or \`{ type: "token", token }\`
-- \`config\`: Configuration object
-  - \`appKey\`: Saxobank app key
-  - \`appSecret\`: Saxobank app secret
-  - \`redirectUri\`: OAuth redirect URI
-  - \`apiEndpoint?\`: API gateway URL (defaults to simulation)
-  - \`authEndpoint?\`: Auth server URL (defaults to simulation)
+- `credentials`: Either `{ type: "account", username, password }` or `{ type: "token", token }`
+- `config`: Configuration object
+  - `appKey`: Saxobank app key
+  - `appSecret`: Saxobank app secret
+  - `redirectUri`: OAuth redirect URI
+  - `apiEndpoint?`: API gateway URL (defaults to simulation)
+  - `authEndpoint?`: Auth server URL (defaults to simulation)
 
-**Returns:** \`Promise<Client>\`
+**Returns:** `Promise<Client>`
 
 #### Client Methods
 
-- \`getAccounts()\`: Get all accounts
-- \`getPositions(accountKey?)\`: Get positions
-- \`getOrders(accountKey?)\`: Get orders
-- \`getNetPositions(accountKey?)\`: Get aggregated positions
-- \`getClosedPositions(accountKey?, fromDate?, toDate?)\`: Get closed positions
-- \`getExposure(accountKey?)\`: Get exposure information
-- \`preCheckOrder(orderRequest)\`: Pre-validate an order
+- `getAccounts()`: Get all accounts
+- `getPositions(accountKey?)`: Get positions
+- `getOrders(accountKey?)`: Get orders
+- `getNetPositions(accountKey?)`: Get aggregated positions
+- `getClosedPositions(accountKey?, fromDate?, toDate?)`: Get closed positions
+- `getExposure(accountKey?)`: Get exposure information
+- `preCheckOrder(orderRequest)`: Pre-validate an order
 
 ### Account
 
 #### Account Properties
 
-- \`id\`: Account identifier
-- \`key\`: Account key
-- \`active\`: Whether account is active
-- \`currency\`: Account currency
+- `id`: Account identifier
+- `key`: Account key
+- `active`: Whether account is active
+- `currency`: Account currency
 
 #### Account Methods
 
-- \`getBalance()\`: Get account balance
-- \`getPositions()\`: Get account positions
-- \`getOrders()\`: Get account orders
-- \`buy(uic, quantity, type?, price?, stopLimit?, options?)\`: Place buy order
-- \`sell(uic, quantity, type?, price?, stopLimit?, options?)\`: Place sell order
-- \`cancelOrder(orderId)\`: Cancel specific order
-- \`cancelAllOrders(uic, assetType?)\`: Cancel all orders for instrument
-- \`modifyOrder(orderId, price?, quantity?)\`: Modify existing order
+- `getBalance()`: Get account balance
+- `getPositions()`: Get account positions
+- `getOrders()`: Get account orders
+- `buy(uic, quantity, type?, price?, stopLimit?, options?)`: Place buy order
+- `sell(uic, quantity, type?, price?, stopLimit?, options?)`: Place sell order
+- `cancelOrder(orderId)`: Cancel specific order
+- `cancelAllOrders(uic, assetType?)`: Cancel all orders for instrument
+- `modifyOrder(orderId, price?, quantity?)`: Modify existing order
 
 ### Order Types
 
-- \`"market"\`: Market order (executes immediately at current price)
-- \`"limit"\`: Limit order (executes at specified price or better)
-- \`"stop"\`: Stop order (triggers at stop price)
-- \`"stop_limit"\`: Stop-limit order (combines stop and limit)
+- `"market"`: Market order (executes immediately at current price)
+- `"limit"`: Limit order (executes at specified price or better)
+- `"stop"`: Stop order (triggers at stop price)
+- `"stop_limit"`: Stop-limit order (combines stop and limit)
 
 ### Order Options
 
-\`\`\`typescript
+```typescript
 interface OrderOptions {
   assetType?: AssetType;
   duration?: OrderDuration;
@@ -269,32 +269,32 @@ interface OrderOptions {
   trailingStopDistanceToMarket?: number;
   trailingStopStep?: number;
 }
-\`\`\`
+```
 
 ### Asset Types
 
 Supported asset types:
-- FX: \`FxSpot\`, \`FxForward\`, \`FxVanillaOption\`, \`FxKnockInOption\`, \`FxKnockOutOption\`, \`FxOneTouchOption\`, \`FxNoTouchOption\`, \`FxBinaryOption\`
-- Equities: \`Stock\`, \`StockOption\`, \`StockIndex\`, \`StockIndexOption\`
-- Fixed Income: \`Bond\`
-- CFDs: \`CfdOnStock\`, \`CfdOnIndex\`, \`CfdOnFutures\`
-- Funds: \`Etc\`, \`Etf\`, \`Etn\`, \`Fund\`, \`MutualFund\`
-- Derivatives: \`FuturesStrategy\`
+- FX: `FxSpot`, `FxForward`, `FxVanillaOption`, `FxKnockInOption`, `FxKnockOutOption`, `FxOneTouchOption`, `FxNoTouchOption`, `FxBinaryOption`
+- Equities: `Stock`, `StockOption`, `StockIndex`, `StockIndexOption`
+- Fixed Income: `Bond`
+- CFDs: `CfdOnStock`, `CfdOnIndex`, `CfdOnFutures`
+- Funds: `Etc`, `Etf`, `Etn`, `Fund`, `MutualFund`
+- Derivatives: `FuturesStrategy`
 
 ### Order Duration Types
 
-\`\`\`typescript
+```typescript
 type OrderDuration = {
   durationType: "DayOrder" | "GoodTillCancel" | "FillOrKill" | "ImmediateOrCancel" | "GoodTillDate";
   expirationDateTime?: string; // Required for GoodTillDate
 };
-\`\`\`
+```
 
 ## Examples
 
 ### Complete Trading Workflow
 
-\`\`\`typescript
+```typescript
 import { createClient } from "@ch99q/sxc";
 
 async function tradingExample() {
@@ -314,7 +314,7 @@ async function tradingExample() {
 
   // Check balance
   const balance = await account.getBalance();
-  console.log(\`Available: \${balance.cashAvailable} \${balance.currency}\`);
+  console.log(`Available: \${balance.cashAvailable} \${balance.currency}`);
 
   // Pre-check an order
   const preCheck = await client.preCheckOrder({
@@ -349,7 +349,7 @@ async function tradingExample() {
   // Monitor positions
   const positions = await account.getPositions();
   positions.forEach(pos => {
-    console.log(\`Position \${pos.id}: \${pos.quantity} @ \${pos.price}\`);
+    console.log(`Position \${pos.id}: \${pos.quantity} @ \${pos.price}`);
   });
 
   // Modify the order if needed
@@ -364,39 +364,39 @@ async function tradingExample() {
 }
 
 tradingExample().catch(console.error);
-\`\`\`
+```
 
 ### Portfolio Monitoring
 
-\`\`\`typescript
+```typescript
 async function monitorPortfolio() {
   const client = await createClient(/* credentials */, /* config */);
   const accounts = await client.getAccounts();
 
   for (const account of accounts) {
-    console.log(\`\\nAccount: \${account.id} (\${account.currency})\`);
+    console.log(`\\nAccount: \${account.id} (\${account.currency})`);
 
     const balance = await account.getBalance();
-    console.log(\`  Cash Available: \${balance.cashAvailable}\`);
-    console.log(\`  Total Value: \${balance.totalValue}\`);
-    console.log(\`  Unrealized P&L: \${balance.unrealizedPnL}\`);
+    console.log(`  Cash Available: \${balance.cashAvailable}`);
+    console.log(`  Total Value: \${balance.totalValue}`);
+    console.log(`  Unrealized P&L: \${balance.unrealizedPnL}`);
 
     const positions = await account.getPositions();
-    console.log(\`  Open Positions: \${positions.length}\`);
+    console.log(`  Open Positions: \${positions.length}`);
 
     positions.forEach(pos => {
-      console.log(\`    \${pos.uic}: \${pos.quantity} @ \${pos.price}\`);
+      console.log(`    \${pos.uic}: \${pos.quantity} @ \${pos.price}`);
     });
 
     const orders = await account.getOrders();
-    console.log(\`  Active Orders: \${orders.length}\`);
+    console.log(`  Active Orders: \${orders.length}`);
   }
 }
-\`\`\`
+```
 
 ## Error Handling
 
-\`\`\`typescript
+```typescript
 try {
   const client = await createClient(credentials, config);
   const accounts = await client.getAccounts();
@@ -417,7 +417,7 @@ try {
     }
   }
 }
-\`\`\`
+```
 
 ## Environment Support
 
@@ -430,7 +430,7 @@ try {
 
 ### Simulation Environment (Default)
 
-\`\`\`typescript
+```typescript
 const client = await createClient(credentials, {
   appKey: "your-app-key",
   appSecret: "your-app-secret",
@@ -439,11 +439,11 @@ const client = await createClient(credentials, {
   apiEndpoint: "https://gateway.saxobank.com/sim/openapi",
   authEndpoint: "https://sim.logonvalidation.net"
 });
-\`\`\`
+```
 
 ### Live Environment
 
-\`\`\`typescript
+```typescript
 const client = await createClient(credentials, {
   appKey: "your-app-key",
   appSecret: "your-app-secret",
@@ -451,17 +451,17 @@ const client = await createClient(credentials, {
   apiEndpoint: "https://gateway.saxobank.com/openapi",
   authEndpoint: "https://live.logonvalidation.net"
 });
-\`\`\`
+```
 
 ## Best Practices
 
 - **Error Handling:** Always wrap API calls in try-catch blocks
-- **Order Validation:** Use \`preCheckOrder()\` before placing orders
+- **Order Validation:** Use `preCheckOrder()` before placing orders
 - **Rate Limits:** Implement delays between requests in automated trading
 - **Resource Management:** Properly handle positions and orders
 - **Testing:** Use simulation environment for development and testing
 
-\`\`\`typescript
+```typescript
 // Good: Proper error handling
 async function placeOrder(account: Account) {
   try {
@@ -488,7 +488,7 @@ async function placeOrder(account: Account) {
     console.error("Failed to place order:", error);
   }
 }
-\`\`\`
+```
 
 ## Contributing
 
