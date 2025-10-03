@@ -1,619 +1,494 @@
-# TradingView WebSocket Client
+# Saxobank Client
 
-[![npm version](https://badge.fury.io/js/@ch99q%2Ftwc.svg)](https://badge.fury.io/js/@ch99q%2Ftwc)
+[![npm version](https://badge.fury.io/js/@ch99q%2Fsxc.svg)](https://badge.fury.io/js/@ch99q%2Fsxc)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive TypeScript/JavaScript client for TradingView's real-time WebSocket API and screener functionality. This library provides easy access to TradingView's live market data, charting capabilities, and powerful stock screening tools.
+A comprehensive TypeScript/JavaScript client for Saxobank's OpenAPI. This library provides easy access to trading, portfolio management, and account operations on the Saxobank platform.
 
 ## Features
 
-- 🚀 **Real-time WebSocket Connection** - Live market data streaming
-- 📈 **Chart Data Access** - Historical and real-time price data
-- 📊 **Technical Indicators** - Built-in support for popular indicators
-- 🔍 **Financial Data & Quotes** - Comprehensive financial reports and metrics
-- 🔍 **Advanced Screener** - Comprehensive stock screening capabilities  
-- 🌐 **Cross-Platform** - Works in browsers, Node.js, Bun, and Deno
+- 🔐 **OAuth Authentication** - Secure authentication with Saxobank OpenAPI
+- 💼 **Portfolio Management** - Access accounts, positions, balances, and exposure
+- 📊 **Trading Operations** - Place, modify, and cancel orders (Market, Limit, Stop, Stop-Limit)
+- 🎯 **Multi-Asset Support** - Trade FX, stocks, options, futures, ETFs, and more
+- 📈 **Position Tracking** - Monitor open, closed, and net positions
+- ⚡ **Order Pre-checking** - Validate orders before placement
 - 📝 **TypeScript Support** - Full type definitions included
-- 🎯 **Simple API** - Easy-to-use interface with Promise-based operations
+- 🌐 **Cross-Platform** - Works in browsers, Node.js, Bun, and Deno
 
 ## Installation
 
-```bash
+\`\`\`bash
 # Using npm
-npm install @ch99q/twc
+npm install @ch99q/sxc
 
 # Using yarn
-yarn add @ch99q/twc
+yarn add @ch99q/sxc
 
 # Using pnpm
-pnpm add @ch99q/twc
+pnpm add @ch99q/sxc
 
 # Using bun
-bun add @ch99q/twc
-```
-
-For Node.js/Bun environments, you'll also need the `ws` package:
-
-```bash
-npm install ws @types/ws
-```
+bun add @ch99q/sxc
+\`\`\`
 
 ## Quick Start
 
-### Basic Chart Data
+### Authentication
 
-```typescript
-import { createSession, createChart, createSeries } from "@ch99q/twc";
+\`\`\`typescript
+import { createClient } from "@ch99q/sxc";
 
-// Create a session
-const session = await createSession();
+// Create client with username/password
+const client = await createClient(
+  {
+    type: "account",
+    username: "your-username",
+    password: "your-password"
+  },
+  {
+    appKey: "your-app-key",
+    appSecret: "your-app-secret",
+    redirectUri: "http://localhost:5000/callback"
+  }
+);
 
-// Create a chart
-const chart = await createChart(session);
+// Or use an existing token
+const client = await createClient(
+  {
+    type: "token",
+    token: "your-access-token"
+  },
+  {
+    appKey: "your-app-key",
+    appSecret: "your-app-secret",
+    redirectUri: "http://localhost:5000/callback"
+  }
+);
 
-// Resolve a symbol
-const symbol = await chart.resolve("AAPL", "NASDAQ");
+console.log(\`Connected as: \${client.name} (\${client.id})\`);
+\`\`\`
 
-// Create a series for daily data
-const series = await createSeries(session, chart, symbol, "1D", 100);
+### Get Accounts and Balances
 
-// Access historical data
-console.log("Latest price:", series.history[series.history.length - 1]);
+\`\`\`typescript
+// Get all accounts
+const accounts = await client.getAccounts();
 
-// Stream real-time updates
-for await (const update of series.stream()) {
-  console.log("Price update:", update);
-}
+// Get balance for an account
+const account = accounts[0];
+const balance = await account.getBalance();
 
-// Cleanup
-await series.close();
-await session.close();
-```
+console.log(\`Balance: \${balance.cashAvailable} \${balance.currency}\`);
+console.log(\`Total Value: \${balance.totalValue} \${balance.currency}\`);
+console.log(\`Margin Used: \${balance.marginUsed} \${balance.currency}\`);
+console.log(\`Unrealized P&L: \${balance.unrealizedPnL} \${balance.currency}\`);
+\`\`\`
 
-### Stock Screener
+### View Positions
 
-```typescript
-import { createScreener } from "@ch99q/twc";
+\`\`\`typescript
+// Get positions for an account
+const positions = await account.getPositions();
 
-// Create a screener for US markets
-const screener = createScreener("america")
-  .columns(["name", "close", "change", "volume", "market_cap_basic"])
-  .where("market_cap_basic").gt(1000000000) // Market cap > $1B
-  .where("volume").gt(1000000) // Volume > 1M
-  .where("change").gt(0) // Positive change
-  .sortBy("volume", "desc")
-  .limit(50);
-
-// Execute the screen
-const results = await screener.execute();
-
-console.log(`Found ${results.totalCount} stocks`);
-results.data.forEach(stock => {
-  console.log(`${stock.name}: $${stock.close} (${stock.change}%)`);
-});
-```
-
-### Technical Indicators
-
-```typescript
-import { createStudy } from "@ch99q/twc";
-import { RSI, MACD } from "@ch99q/twc/studies";
-
-// Add RSI indicator
-const rsi = await createStudy(session, chart, series, RSI(14));
-
-// Add MACD indicator  
-const macd = await createStudy(session, chart, series, MACD(12, 26, 9));
-
-// Access indicator values
-console.log("Current RSI:", rsi.history[rsi.history.length - 1]);
-console.log("Current MACD:", macd.history[macd.history.length - 1]);
-```
-
-### Financial Data & Quotes
-
-```typescript
-import { createQuote } from "@ch99q/twc";
-
-// Get comprehensive financial data for a stock
-const quote = await createQuote(session, "AAPL", "NASDAQ");
-
-console.log(`Financial data for ${quote.symbol}:`);
-console.log(`Total reports: ${quote.reports.length}`);
-
-// Filter by report type
-const annualReports = quote.reports.filter(r => r.type === "annual");
-const quarterlyReports = quote.reports.filter(r => r.type === "quarterly");
-
-// Access latest annual report
-const latestAnnual = annualReports[annualReports.length - 1];
-console.log("Latest annual report:", {
-  date: latestAnnual.date,
-  revenue: latestAnnual.total_revenue,
-  netIncome: latestAnnual.net_income,
-  totalAssets: latestAnnual.total_assets,
-  totalEquity: latestAnnual.total_equity,
-  eps: latestAnnual.basic_eps
+positions.forEach(position => {
+  console.log(\`Position \${position.id}:\`);
+  console.log(\`  Instrument: \${position.uic}\`);
+  console.log(\`  Quantity: \${position.quantity}\`);
+  console.log(\`  Price: \${position.price}\`);
+  console.log(\`  Value: \${position.value} \${position.currency}\`);
+  console.log(\`  Status: \${position.status}\`);
 });
 
-// Access latest quarterly report  
-const latestQuarterly = quarterlyReports[quarterlyReports.length - 1];
-console.log("Latest quarterly report:", {
-  date: latestQuarterly.date, 
-  revenue: latestQuarterly.total_revenue,
-  netIncome: latestQuarterly.net_income
+// Get net positions (aggregated)
+const netPositions = await client.getNetPositions();
+
+// Get closed positions
+const closedPositions = await client.getClosedPositions(
+  account.key,
+  new Date("2024-01-01"),
+  new Date()
+);
+\`\`\`
+
+### Place Orders
+
+\`\`\`typescript
+// Place a market buy order
+const marketOrder = await account.buy(
+  21,              // UIC (instrument ID)
+  100000,          // Quantity
+  "market",        // Order type
+  undefined,       // Price (not needed for market)
+  undefined,       // Stop limit (not needed)
+  {
+    assetType: "FxSpot",
+    externalReference: "my-order-123",
+    manualOrder: true
+  }
+);
+
+// Place a limit sell order
+const limitOrder = await account.sell(
+  21,              // UIC for EUR/USD
+  100000,          // Quantity
+  "limit",         // Order type
+  1.1500,          // Limit price
+  undefined,
+  {
+    assetType: "FxSpot",
+    duration: { durationType: "GoodTillCancel" },
+    externalReference: "my-limit-order"
+  }
+);
+
+// Place a stop order
+const stopOrder = await account.sell(
+  21,
+  100000,
+  "stop",
+  1.0800,          // Order price
+  1.0900,          // Stop limit price
+  {
+    assetType: "FxSpot",
+    duration: { durationType: "DayOrder" }
+  }
+);
+\`\`\`
+
+### Manage Orders
+
+\`\`\`typescript
+// Get all orders
+const orders = await account.getOrders();
+
+orders.forEach(order => {
+  console.log(\`Order \${order.id}:\`);
+  console.log(\`  Type: \${order.type} \${order.order_type}\`);
+  console.log(\`  Price: \${order.price}\`);
+  console.log(\`  Quantity: \${order.quantity}\`);
+  console.log(\`  Status: \${order.status}\`);
 });
-```
+
+// Modify an existing order
+await account.modifyOrder(
+  "order-id",
+  1.1600,          // New price
+  150000           // New quantity
+);
+
+// Cancel a specific order
+await account.cancelOrder("order-id");
+
+// Cancel all orders for an instrument
+await account.cancelAllOrders(21, "FxSpot");
+\`\`\`
+
+### Pre-check Orders
+
+\`\`\`typescript
+// Validate an order before placing it
+const preCheckResult = await client.preCheckOrder({
+  accountKey: account.key,
+  uic: 21,
+  assetType: "FxSpot",
+  buySell: "Buy",
+  orderType: "Market",
+  amount: 100000,
+  manualOrder: true
+});
+
+console.log("Order validation:", preCheckResult);
+\`\`\`
 
 ## API Reference
 
-### Session Management
+### Client
 
-#### `createSession(token?, verbose?)`
+#### \`createClient(credentials, config)\`
 
-Creates a new WebSocket session to TradingView.
+Creates a new Saxobank client.
 
-- `token` (optional): Pro subscription token for premium data
-- `verbose` (optional): Enable verbose logging
-- Returns: `Promise<Session>`
+**Parameters:**
+- \`credentials\`: Either \`{ type: "account", username, password }\` or \`{ type: "token", token }\`
+- \`config\`: Configuration object
+  - \`appKey\`: Saxobank app key
+  - \`appSecret\`: Saxobank app secret
+  - \`redirectUri\`: OAuth redirect URI
+  - \`apiEndpoint?\`: API gateway URL (defaults to simulation)
+  - \`authEndpoint?\`: Auth server URL (defaults to simulation)
 
-```typescript
-// Free data
-const session = await createSession();
+**Returns:** \`Promise<Client>\`
 
-// Premium data (requires TradingView Pro)
-const session = await createSession("your-pro-token");
-```
+#### Client Methods
 
-### Chart Operations
+- \`getAccounts()\`: Get all accounts
+- \`getPositions(accountKey?)\`: Get positions
+- \`getOrders(accountKey?)\`: Get orders
+- \`getNetPositions(accountKey?)\`: Get aggregated positions
+- \`getClosedPositions(accountKey?, fromDate?, toDate?)\`: Get closed positions
+- \`getExposure(accountKey?)\`: Get exposure information
+- \`preCheckOrder(orderRequest)\`: Pre-validate an order
 
-#### `createChart(session)`
+### Account
 
-Creates a new chart instance for symbol resolution and data access.
+#### Account Properties
 
-```typescript
-const chart = await createChart(session);
-```
+- \`id\`: Account identifier
+- \`key\`: Account key
+- \`active\`: Whether account is active
+- \`currency\`: Account currency
 
-#### `chart.resolve(symbol, exchange)`
+#### Account Methods
 
-Resolves symbol information from the exchange.
+- \`getBalance()\`: Get account balance
+- \`getPositions()\`: Get account positions
+- \`getOrders()\`: Get account orders
+- \`buy(uic, quantity, type?, price?, stopLimit?, options?)\`: Place buy order
+- \`sell(uic, quantity, type?, price?, stopLimit?, options?)\`: Place sell order
+- \`cancelOrder(orderId)\`: Cancel specific order
+- \`cancelAllOrders(uic, assetType?)\`: Cancel all orders for instrument
+- \`modifyOrder(orderId, price?, quantity?)\`: Modify existing order
 
-```typescript
-const symbol = await chart.resolve("AAPL", "NASDAQ");
-console.log(symbol.description); // "Apple Inc"
-```
+### Order Types
 
-### Series Data
+- \`"market"\`: Market order (executes immediately at current price)
+- \`"limit"\`: Limit order (executes at specified price or better)
+- \`"stop"\`: Stop order (triggers at stop price)
+- \`"stop_limit"\`: Stop-limit order (combines stop and limit)
 
-#### `createSeries(session, chart, symbol, timeframe, count, range?)`
+### Order Options
 
-Creates a data series for historical and real-time price data.
-
-- `timeframe`: "1", "5", "15", "30", "60", "240", "1D", "1W", "1M"
-- `count`: Number of bars to fetch
-- `range` (optional): Time range or custom range
-
-```typescript
-// Last 100 daily bars
-const series = await createSeries(session, chart, symbol, "1D", 100);
-
-// Specific date range
-const series = await createSeries(
-  session, 
-  chart, 
-  symbol, 
-  "1H", 
-  0, 
-  [1640995200, 1672531200] // Unix timestamps
-);
-
-// Predefined ranges
-const series = await createSeries(session, chart, symbol, "1D", 0, "YTD");
-```
-
-### Studies & Indicators
-
-#### `createStudy(session, chart, series, indicator)`
-
-Adds a technical indicator to a series.
-
-```typescript
-import { RSI, SMA, EMA, MACD, BollingerBands } from "@ch99q/twc/studies";
-
-// Moving averages
-const sma20 = await createStudy(session, chart, series, SMA(20));
-const ema50 = await createStudy(session, chart, series, EMA(50));
-
-// Oscillators
-const rsi = await createStudy(session, chart, series, RSI(14));
-const macd = await createStudy(session, chart, series, MACD(12, 26, 9));
-
-// Bands
-const bb = await createStudy(session, chart, series, BollingerBands(20, 2));
-```
-
-### Financial Quotes
-
-#### `createQuote(session, symbol, exchange)`
-
-Retrieves comprehensive financial data and reports for a symbol.
-
-- `symbol`: Stock symbol (e.g., "AAPL", "MSFT")
-- `exchange`: Exchange name (e.g., "NASDAQ", "NYSE")
-- Returns: `Promise<Quote>`
-
-```typescript
-const quote = await createQuote(session, "AAPL", "NASDAQ");
-
-// Quote structure
-interface Quote {
-  id: string;           // Unique quote identifier
-  symbol: string;       // Stock symbol
-  exchange: string;     // Exchange name
-  reports: Report[];    // Array of financial reports
+\`\`\`typescript
+interface OrderOptions {
+  assetType?: AssetType;
+  duration?: OrderDuration;
+  externalReference?: string;
+  manualOrder?: boolean;
+  isForceOpen?: boolean;
+  trailingStopDistanceToMarket?: number;
+  trailingStopStep?: number;
 }
+\`\`\`
 
-// Report structure  
-interface Report {
-  type: "annual" | "quarterly";  // Report period type
-  date: string;                  // Report date
-  symbol: string;               // Stock symbol
-  
-  // Income Statement
-  total_revenue: number;         // Total revenue
-  net_income: number;           // Net income
-  basic_eps: number;            // Basic earnings per share
-  diluted_eps: number;          // Diluted earnings per share
-  
-  // Balance Sheet
-  total_assets: number;         // Total assets
-  total_equity: number;         // Total shareholders' equity
-  total_debt: number;           // Total debt
-  cash_n_short_term_investments: number; // Cash and equivalents
-  
-  // Cash Flow
-  cash_f_operating_activities: number;   // Operating cash flow
-  cash_f_investing_activities: number;   // Investing cash flow
-  cash_f_financing_activities: number;   // Financing cash flow
-  capital_expenditures: number;          // Capital expenditures
-  
-  // Key Ratios (calculated fields)
-  asset_turnover: number;               // Asset turnover ratio
-  book_value_per_share: number;         // Book value per share
-  debt_to_equity_ratio_fq: number;      // Debt-to-equity ratio
-  return_on_assets_fq: number;          // Return on assets
-  return_on_equity_fq: number;          // Return on equity
-  
-  // And 200+ other financial fields...
-}
-```
+### Asset Types
 
-**Available Financial Fields:**
+Supported asset types:
+- FX: \`FxSpot\`, \`FxForward\`, \`FxVanillaOption\`, \`FxKnockInOption\`, \`FxKnockOutOption\`, \`FxOneTouchOption\`, \`FxNoTouchOption\`, \`FxBinaryOption\`
+- Equities: \`Stock\`, \`StockOption\`, \`StockIndex\`, \`StockIndexOption\`
+- Fixed Income: \`Bond\`
+- CFDs: \`CfdOnStock\`, \`CfdOnIndex\`, \`CfdOnFutures\`
+- Funds: \`Etc\`, \`Etf\`, \`Etn\`, \`Fund\`, \`MutualFund\`
+- Derivatives: \`FuturesStrategy\`
 
-The quote reports include comprehensive financial data with 200+ fields:
+### Order Duration Types
 
-**Income Statement:** `total_revenue`, `gross_profit`, `operating_income`, `net_income`, `basic_eps`, `diluted_eps`
-
-**Balance Sheet:** `total_assets`, `total_equity`, `total_debt`, `cash_n_short_term_investments`, `accounts_receivables_net`
-
-**Cash Flow:** `cash_f_operating_activities`, `cash_f_investing_activities`, `capital_expenditures`, `free_cash_flow`
-
-**Per Share Metrics:** `book_value_per_share`, `tangible_book_value_per_share`, `cash_per_share`, `revenue_per_share`
-
-**Financial Ratios:** `debt_to_equity_ratio_fq`, `current_ratio_fq`, `return_on_assets_fq`, `return_on_equity_fq`
-
-**Profitability:** `gross_margin`, `operating_margin`, `profit_margin`, `ebitda_margin`
-
-See the complete field definitions in [`client.quote.ts`](./src/client.quote.ts).
-
-### Stock Screener
-
-#### `createScreener(...markets)`
-
-Creates a new screener instance for the specified markets.
-
-**Available Markets:**
-`america`, `argentina`, `australia`, `austria`, `bahrain`, `bangladesh`, `belgium`, `brazil`, `canada`, `chile`, `china`, `colombia`, `croatia`, `cyprus`, `czech`, `denmark`, `egypt`, `estonia`, `finland`, `france`, `germany`, `greece`, `hongkong`, `hungary`, `iceland`, `india`, `indonesia`, `ireland`, `israel`, `italy`, `japan`, `jordan`, `kenya`, `korea`, `kuwait`, `latvia`, `lebanon`, `lithuania`, `luxembourg`, `malaysia`, `mexico`, `morocco`, `netherlands`, `newzealand`, `norway`, `pakistan`, `peru`, `philippines`, `poland`, `portugal`, `qatar`, `romania`, `russia`, `saudiarabia`, `serbia`, `singapore`, `slovakia`, `slovenia`, `southafrica`, `spain`, `srilanka`, `sweden`, `switzerland`, `taiwan`, `thailand`, `turkey`, `uae`, `uk`, `ukraine`, `vietnam`
-
-#### Screening Methods
-
-```typescript
-const screener = createScreener("america", "europe")
-  // Select columns to return
-  .columns(["name", "close", "change", "volume"])
-  
-  // Add filters
-  .where("market_cap_basic").gte(1000000000)
-  .where("volume").between(100000, 50000000)
-  .where("sector").in(["Technology", "Healthcare"])
-  
-  // Combine filters with AND/OR
-  .and(builder => 
-    builder.where("price_earnings_ttm").lt(20)
-           .where("debt_to_equity_fq").lt(0.5)
-  )
-  
-  // Sort results
-  .sortBy("market_cap_basic", "desc")
-  
-  // Limit results
-  .limit(100)
-  
-  // Execute the screen
-  .execute();
-```
-
-**Filter Operations:**
-- `eq(value)` - Equal to
-- `ne(value)` - Not equal to  
-- `gt(value)` - Greater than
-- `gte(value)` - Greater than or equal
-- `lt(value)` - Less than
-- `lte(value)` - Less than or equal
-- `between(min, max)` - Between values
-- `in(array)` - In array of values
-- `match(pattern)` - Matches pattern
-- `crosses(value)` - Crosses value
-- `above(value)` - Above value
-- `below(value)` - Below value
-
-**Available Fields:**
-
-The screener supports 200+ fields including:
-
-**Basic Info:** `name`, `exchange`, `sector`, `industry`, `country`, `currency`
-
-**Price Data:** `close`, `open`, `high`, `low`, `volume`, `change`, `change_abs`
-
-**Market Data:** `market_cap_basic`, `shares_outstanding_calc`, `enterprise_value_calc`
-
-**Financial Ratios:** `price_earnings_ttm`, `price_book_fq`, `debt_to_equity_fq`, `current_ratio_fq`
-
-**Performance:** `Perf.1D`, `Perf.W`, `Perf.1M`, `Perf.3M`, `Perf.YTD`, `Perf.Y`
-
-**Technical:** `RSI`, `MACD.macd`, `SMA20`, `EMA50`, `BB.upper`, `BB.lower`
-
-**Dividends:** `dividend_yield_recent`, `dividend_payout_ratio_ttm`
-
-See the full list in the [type definitions](./src/screener.ts).
+\`\`\`typescript
+type OrderDuration = {
+  durationType: "DayOrder" | "GoodTillCancel" | "FillOrKill" | "ImmediateOrCancel" | "GoodTillDate";
+  expirationDateTime?: string; // Required for GoodTillDate
+};
+\`\`\`
 
 ## Examples
 
-### Multi-Timeframe Analysis
+### Complete Trading Workflow
 
-```typescript
-import { createSession, createChart, createSeries } from "@ch99q/twc";
+\`\`\`typescript
+import { createClient } from "@ch99q/sxc";
 
-const session = await createSession();
-const chart = await createChart(session);
-const symbol = await chart.resolve("BTCUSD", "BINANCE");
-
-// Create multiple timeframes
-const daily = await createSeries(session, chart, symbol, "1D", 100);
-const hourly = await createSeries(session, chart, symbol, "1H", 200);
-const minute = await createSeries(session, chart, symbol, "1", 500);
-
-console.log("Daily trend:", daily.history.slice(-5));
-console.log("Hourly trend:", hourly.history.slice(-10));
-console.log("Recent prices:", minute.history.slice(-20));
-```
-
-### Financial Analysis with Quotes
-
-```typescript
-import { createSession, createQuote } from "@ch99q/twc";
-
-async function analyzeCompany(symbol: string, exchange: string) {
-  const session = await createSession();
-  
-  try {
-    const quote = await createQuote(session, symbol, exchange);
-    
-    // Get latest annual and quarterly reports
-    const annualReports = quote.reports.filter(r => r.type === "annual");
-    const quarterlyReports = quote.reports.filter(r => r.type === "quarterly");
-    
-    const latestAnnual = annualReports[annualReports.length - 1];
-    const latestQuarterly = quarterlyReports[quarterlyReports.length - 1];
-    
-    // Financial health metrics
-    const analysis = {
-      company: symbol,
-      
-      // Revenue & Growth
-      annualRevenue: latestAnnual.total_revenue,
-      quarterlyRevenue: latestQuarterly.total_revenue,
-      revenueGrowth: ((latestQuarterly.total_revenue / quarterlyReports[quarterlyReports.length - 5]?.total_revenue - 1) * 100).toFixed(1),
-      
-      // Profitability
-      netIncome: latestAnnual.net_income,
-      profitMargin: ((latestAnnual.net_income / latestAnnual.total_revenue) * 100).toFixed(1),
-      eps: latestAnnual.basic_eps,
-      
-      // Financial Position
-      totalAssets: latestAnnual.total_assets,
-      totalDebt: latestAnnual.total_debt,
-      totalEquity: latestAnnual.total_equity,
-      debtToEquity: (latestAnnual.total_debt / latestAnnual.total_equity).toFixed(2),
-      
-      // Returns
-      roe: (latestAnnual.return_on_equity_fq * 100).toFixed(1),
-      roa: (latestAnnual.return_on_assets_fq * 100).toFixed(1),
-      
-      // Cash Flow
-      operatingCashFlow: latestAnnual.cash_f_operating_activities,
-      freeCashFlow: latestAnnual.free_cash_flow,
-      capex: latestAnnual.capital_expenditures,
-    };
-    
-    console.log(`Financial Analysis for ${symbol}:`, analysis);
-    
-    // Investment signals
-    const signals = [];
-    if (parseFloat(analysis.revenueGrowth) > 15) signals.push("Strong revenue growth");
-    if (parseFloat(analysis.profitMargin) > 20) signals.push("High profit margin");
-    if (parseFloat(analysis.debtToEquity) < 0.3) signals.push("Low debt burden");
-    if (parseFloat(analysis.roe) > 15) signals.push("Strong ROE");
-    if (analysis.freeCashFlow > 0) signals.push("Positive free cash flow");
-    
-    console.log("Investment Signals:", signals);
-    
-  } finally {
-    await session.close();
-  }
-}
-
-// Analyze multiple companies
-await Promise.all([
-  analyzeCompany("AAPL", "NASDAQ"),
-  analyzeCompany("MSFT", "NASDAQ"), 
-  analyzeCompany("GOOGL", "NASDAQ")
-]);
-```
-
-### Complex Screening
-
-```typescript
-import { createScreener } from "@ch99q/twc";
-
-// Find growth stocks with strong fundamentals
-const growthScreener = createScreener("america")
-  .columns([
-    "name", "sector", "close", "market_cap_basic", 
-    "price_earnings_ttm", "revenue_growth_ttm_yoy",
-    "earnings_growth_ttm_yoy", "debt_to_equity_fq"
-  ])
-  .where("market_cap_basic").between(1e9, 100e9) // $1B - $100B
-  .where("revenue_growth_ttm_yoy").gt(0.15) // 15%+ revenue growth
-  .where("earnings_growth_ttm_yoy").gt(0.20) // 20%+ earnings growth  
-  .where("price_earnings_ttm").between(10, 30) // Reasonable P/E
-  .where("debt_to_equity_fq").lt(0.4) // Low debt
-  .sortBy("revenue_growth_ttm_yoy", "desc")
-  .limit(25);
-
-const results = await growthScreener.execute();
-
-// Find dividend aristocrats
-const dividendScreener = createScreener("america")
-  .columns([
-    "name", "sector", "dividend_yield_recent",
-    "dividend_payout_ratio_ttm", "dividend_growth_5y"
-  ])
-  .where("dividend_yield_recent").between(0.02, 0.08) // 2-8% yield
-  .where("dividend_payout_ratio_ttm").lt(0.7) // Sustainable payout
-  .where("dividend_growth_5y").gt(0.05) // Growing dividends
-  .sortBy("dividend_yield_recent", "desc");
-
-const dividendStocks = await dividendScreener.execute();
-```
-
-### Real-time Monitoring
-
-```typescript
-import { createSession, createChart, createSeries, createStudy } from "@ch99q/twc";
-import { RSI, MACD } from "@ch99q/twc/studies";
-
-async function monitorStock(symbol: string, exchange: string) {
-  const session = await createSession();
-  const chart = await createChart(session);
-  const resolvedSymbol = await chart.resolve(symbol, exchange);
-  
-  // Create 1-minute series
-  const series = await createSeries(session, chart, resolvedSymbol, "1", 100);
-  
-  // Add indicators
-  const rsi = await createStudy(session, chart, series, RSI(14));
-  const macd = await createStudy(session, chart, series, MACD(12, 26, 9));
-  
-  console.log(`Monitoring ${symbol}...`);
-  
-  // Stream updates
-  for await (const update of series.stream()) {
-    const [timestamp, open, high, low, close, volume] = update;
-    const currentRSI = rsi.history[rsi.history.length - 1];
-    const currentMACD = macd.history[macd.history.length - 1];
-    
-    console.log({
-      time: new Date(timestamp * 1000),
-      price: close,
-      volume,
-      rsi: currentRSI?.[1],
-      macd: currentMACD?.[1]
-    });
-    
-    // Alert conditions
-    if (currentRSI?.[1] > 70) {
-      console.log("🔴 OVERBOUGHT: RSI > 70");
-    } else if (currentRSI?.[1] < 30) {
-      console.log("🟢 OVERSOLD: RSI < 30");
+async function tradingExample() {
+  // Connect to Saxobank
+  const client = await createClient(
+    { type: "account", username: "user", password: "pass" },
+    {
+      appKey: "app-key",
+      appSecret: "app-secret",
+      redirectUri: "http://localhost:5000/callback"
     }
+  );
+
+  // Get first account
+  const accounts = await client.getAccounts();
+  const account = accounts[0];
+
+  // Check balance
+  const balance = await account.getBalance();
+  console.log(\`Available: \${balance.cashAvailable} \${balance.currency}\`);
+
+  // Pre-check an order
+  const preCheck = await client.preCheckOrder({
+    accountKey: account.key,
+    uic: 21,
+    assetType: "FxSpot",
+    buySell: "Buy",
+    orderType: "Market",
+    amount: 100000
+  });
+
+  if (preCheck.estimatedCosts) {
+    console.log("Estimated cost:", preCheck.estimatedCosts);
+  }
+
+  // Place a limit order
+  const order = await account.buy(
+    21,
+    100000,
+    "limit",
+    1.1000,
+    undefined,
+    {
+      assetType: "FxSpot",
+      duration: { durationType: "GoodTillCancel" },
+      externalReference: "trade-001"
+    }
+  );
+
+  console.log("Order placed:", order.id);
+
+  // Monitor positions
+  const positions = await account.getPositions();
+  positions.forEach(pos => {
+    console.log(\`Position \${pos.id}: \${pos.quantity} @ \${pos.price}\`);
+  });
+
+  // Modify the order if needed
+  if ('id' in order && 'type' in order) {
+    await account.modifyOrder(order.id, 1.0950); // New price
+  }
+
+  // Cancel the order
+  if ('id' in order && 'type' in order) {
+    await account.cancelOrder(order.id);
   }
 }
 
-// Monitor Apple stock
-await monitorStock("AAPL", "NASDAQ");
-```
+tradingExample().catch(console.error);
+\`\`\`
+
+### Portfolio Monitoring
+
+\`\`\`typescript
+async function monitorPortfolio() {
+  const client = await createClient(/* credentials */, /* config */);
+  const accounts = await client.getAccounts();
+
+  for (const account of accounts) {
+    console.log(\`\\nAccount: \${account.id} (\${account.currency})\`);
+
+    const balance = await account.getBalance();
+    console.log(\`  Cash Available: \${balance.cashAvailable}\`);
+    console.log(\`  Total Value: \${balance.totalValue}\`);
+    console.log(\`  Unrealized P&L: \${balance.unrealizedPnL}\`);
+
+    const positions = await account.getPositions();
+    console.log(\`  Open Positions: \${positions.length}\`);
+
+    positions.forEach(pos => {
+      console.log(\`    \${pos.uic}: \${pos.quantity} @ \${pos.price}\`);
+    });
+
+    const orders = await account.getOrders();
+    console.log(\`  Active Orders: \${orders.length}\`);
+  }
+}
+\`\`\`
 
 ## Error Handling
 
-The library includes comprehensive error handling with specific error types:
-
-```typescript
-import { 
-  ProtocolError, 
-  CriticalError, 
-  SymbolError, 
-  SeriesError,
-  StudyError 
-} from "@ch99q/twc";
-
+\`\`\`typescript
 try {
-  const session = await createSession();
-  // ... your code
+  const client = await createClient(credentials, config);
+  const accounts = await client.getAccounts();
+  const account = accounts[0];
+
+  // Place order
+  const order = await account.buy(21, 100000, "market", undefined, undefined, {
+    assetType: "FxSpot"
+  });
+
 } catch (error) {
-  if (error instanceof ProtocolError) {
-    console.error("Protocol error:", error.message);
-  } else if (error instanceof SymbolError) {
-    console.error("Symbol error:", error.symbolId, error.message);
-  } else if (error instanceof SeriesError) {
-    console.error("Series error:", error.seriesId, error.message);
-  } else {
-    console.error("Unknown error:", error);
+  if (error instanceof Error) {
+    console.error("Error:", error.message);
+
+    // API errors include detailed information
+    if (error.message.includes("API request failed")) {
+      console.error("API Error Details:", error.message);
+    }
   }
 }
-```
-
-## Rate Limits & Best Practices
-
-- **Connection Limits:** Limit concurrent connections (recommended: 1-3 per application)
-- **Symbol Limits:** Avoid subscribing to too many symbols simultaneously  
-- **Reconnection:** Implement exponential backoff for reconnections
-- **Memory Management:** Always call `.close()` on series, studies, and sessions
-- **Error Handling:** Implement proper error handling for production use
-
-```typescript
-// Good: Proper resource management
-async function handleData() {
-  const session = await createSession();
-  try {
-    // ... use session
-  } finally {
-    await session.close(); // Always cleanup
-  }
-}
-
-// Good: Limit concurrent subscriptions  
-const maxSymbols = 10;
-const symbols = ["AAPL", "GOOGL", "MSFT", /* ... */].slice(0, maxSymbols);
-```
+\`\`\`
 
 ## Environment Support
 
 - **Browser:** Chrome, Firefox, Safari, Edge (latest versions)
-- **Node.js:** 18.0.0+ (requires `ws` package)  
-- **Bun:** Latest version (requires `ws` package)
-- **Deno:** Latest version (built-in WebSocket support)
+- **Node.js:** 18.0.0+
+- **Bun:** Latest version
+- **Deno:** Latest version
+
+## Configuration
+
+### Simulation Environment (Default)
+
+\`\`\`typescript
+const client = await createClient(credentials, {
+  appKey: "your-app-key",
+  appSecret: "your-app-secret",
+  redirectUri: "http://localhost:5000/callback",
+  // These are the defaults:
+  apiEndpoint: "https://gateway.saxobank.com/sim/openapi",
+  authEndpoint: "https://sim.logonvalidation.net"
+});
+\`\`\`
+
+### Live Environment
+
+\`\`\`typescript
+const client = await createClient(credentials, {
+  appKey: "your-app-key",
+  appSecret: "your-app-secret",
+  redirectUri: "http://localhost:5000/callback",
+  apiEndpoint: "https://gateway.saxobank.com/openapi",
+  authEndpoint: "https://live.logonvalidation.net"
+});
+\`\`\`
+
+## Best Practices
+
+- **Error Handling:** Always wrap API calls in try-catch blocks
+- **Order Validation:** Use \`preCheckOrder()\` before placing orders
+- **Rate Limits:** Implement delays between requests in automated trading
+- **Resource Management:** Properly handle positions and orders
+- **Testing:** Use simulation environment for development and testing
+
+\`\`\`typescript
+// Good: Proper error handling
+async function placeOrder(account: Account) {
+  try {
+    // Validate first
+    const preCheck = await client.preCheckOrder({
+      accountKey: account.key,
+      uic: 21,
+      assetType: "FxSpot",
+      buySell: "Buy",
+      orderType: "Market",
+      amount: 100000
+    });
+
+    if (preCheck.errorInfo) {
+      console.error("Order validation failed:", preCheck.errorInfo);
+      return;
+    }
+
+    // Then place order
+    const order = await account.buy(21, 100000, "market");
+    console.log("Order placed:", order);
+
+  } catch (error) {
+    console.error("Failed to place order:", error);
+  }
+}
+\`\`\`
 
 ## Contributing
 
@@ -625,13 +500,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Disclaimer
 
-This library is not officially affiliated with TradingView. Use at your own risk. The library is provided "as is" without warranty. Always verify data independently for trading decisions.
+This library is not officially affiliated with Saxobank. Use at your own risk. The library is provided "as is" without warranty. Always verify trades and account operations. Never trade with funds you cannot afford to lose.
 
 ## Support
 
-- 📖 [Documentation](https://github.com/ch99q/twc)
-- 🐛 [Issue Tracker](https://github.com/ch99q/twc/issues)
-- 💬 [Discussions](https://github.com/ch99q/twc/discussions)
+- 📖 [Documentation](https://github.com/ch99q/sxc)
+- 🐛 [Issue Tracker](https://github.com/ch99q/sxc/issues)
+- 💬 [Discussions](https://github.com/ch99q/sxc/discussions)
 
 ---
 

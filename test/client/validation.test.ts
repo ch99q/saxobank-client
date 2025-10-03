@@ -36,15 +36,14 @@ describe("Order Validation", () => {
       const preCheckResult = await client.preCheckOrder(orderRequest);
       
       expect(preCheckResult).toBeDefined();
-      
+
       // Pre-check should provide meaningful information
-      const hasValidResponse = 
-        preCheckResult.ErrorInfo || 
-        preCheckResult.Costs || 
-        preCheckResult.MarginImpact ||
-        preCheckResult.EstimatedCosts ||
-        preCheckResult.PreCheckResult;
-        
+      const hasValidResponse =
+        preCheckResult.errorInfo ||
+        preCheckResult.estimatedCosts ||
+        preCheckResult.marginImpact ||
+        preCheckResult.preCheckResult;
+
       expect(hasValidResponse).toBeTruthy();
       
       console.log("Market order pre-check result:", preCheckResult);

@@ -321,15 +321,14 @@ describe("Trading Operations", () => {
       console.log("Pre-check result:", preCheckResult);
       
       expect(preCheckResult).toBeDefined();
-      
+
       // Pre-check should provide information about costs, margin impact, etc.
-      const hasValidResponse = 
-        preCheckResult.ErrorInfo || 
-        preCheckResult.Costs || 
-        preCheckResult.MarginImpact ||
-        preCheckResult.EstimatedCosts ||
-        preCheckResult.PreCheckResult;
-        
+      const hasValidResponse =
+        preCheckResult.errorInfo ||
+        preCheckResult.estimatedCosts ||
+        preCheckResult.marginImpact ||
+        preCheckResult.preCheckResult;
+
       expect(hasValidResponse).toBeTruthy();
       console.log("✓ Order pre-check completed");
     }, 15000);

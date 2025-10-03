@@ -40,7 +40,7 @@ export interface Client {
   /** Get exposure information */
   getExposure(account_id?: string): Promise<Any>,
   /** Pre-check an order before placing it */
-  preCheckOrder(order: OrderRequest): Promise<Any>,
+  preCheckOrder(order: OrderRequest): Promise<PreCheckResult>,
 }
 
 export interface Account {
@@ -204,6 +204,28 @@ export interface OrderRequest {
   externalReference?: string;
   manualOrder?: boolean;
   isForceOpen?: boolean;
+}
+
+export interface PreCheckResult {
+  /** Estimated costs for the order */
+  estimatedCosts?: {
+    commission?: number;
+    financing?: number;
+    total?: number;
+  };
+  /** Margin impact information */
+  marginImpact?: {
+    initialMargin?: number;
+    maintenanceMargin?: number;
+    currency?: string;
+  };
+  /** Error information if pre-check failed */
+  errorInfo?: {
+    errorCode: string;
+    message: string;
+  };
+  /** Whether the order passed pre-check validation */
+  preCheckResult?: string;
 }
 
 type Credentials = {
@@ -617,8 +639,8 @@ export const createClient = async (auth: Credentials, config: AppConfig) => {
     }
   };
 
-  const preCheckOrder = async (orderRequest: OrderRequest) => {
-    return await fetch(`${clientConfig.apiEndpoint}/trade/v2/orders/precheck`, {
+  const preCheckOrder = async (orderRequest: OrderRequest): Promise<PreCheckResult> => {
+    const response = await fetch(`${clientConfig.apiEndpoint}/trade/v2/orders/precheck`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token.access_token}`,
@@ -628,6 +650,39 @@ export const createClient = async (auth: Credentials, config: AppConfig) => {
     })
       .then((response) => response.json())
       .then(handleError);
+
+    // Transform TitleCase API response to camelCase
+    const result: PreCheckResult = {};
+
+    if (response.EstimatedCosts || response.Costs) {
+      const costs = response.EstimatedCosts || response.Costs;
+      result.estimatedCosts = {
+        commission: costs.Commission,
+        financing: costs.Financing,
+        total: costs.Total || costs.TotalCosts
+      };
+    }
+
+    if (response.MarginImpact) {
+      result.marginImpact = {
+        initialMargin: response.MarginImpact.InitialMargin,
+        maintenanceMargin: response.MarginImpact.MaintenanceMargin,
+        currency: response.MarginImpact.Currency
+      };
+    }
+
+    if (response.ErrorInfo) {
+      result.errorInfo = {
+        errorCode: response.ErrorInfo.ErrorCode,
+        message: response.ErrorInfo.Message
+      };
+    }
+
+    if (response.PreCheckResult) {
+      result.preCheckResult = response.PreCheckResult;
+    }
+
+    return result;
   };
 
   const getAccounts = async () => (await request(token.access_token, "/port/v1/accounts/me", clientConfig.apiEndpoint).catch(handleError))?.Data?.map((account: Any) => (lock({
