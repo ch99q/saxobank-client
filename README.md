@@ -66,7 +66,7 @@ const client = await createClient(
   }
 );
 
-console.log(`Connected as: \${client.name} (\${client.id})`);
+console.log(`Connected as: ${client.name} (${client.id})`);
 ```
 
 ### Get Accounts and Balances
@@ -79,10 +79,10 @@ const accounts = await client.getAccounts();
 const account = accounts[0];
 const balance = await account.getBalance();
 
-console.log(`Balance: \${balance.cashAvailable} \${balance.currency}`);
-console.log(`Total Value: \${balance.totalValue} \${balance.currency}`);
-console.log(`Margin Used: \${balance.marginUsed} \${balance.currency}`);
-console.log(`Unrealized P&L: \${balance.unrealizedPnL} \${balance.currency}`);
+console.log(`Balance: ${balance.cashAvailable} ${balance.currency}`);
+console.log(`Total Value: ${balance.totalValue} ${balance.currency}`);
+console.log(`Margin Used: ${balance.marginUsed} ${balance.currency}`);
+console.log(`Unrealized P&L: ${balance.unrealizedPnL} ${balance.currency}`);
 ```
 
 ### View Positions
@@ -92,12 +92,12 @@ console.log(`Unrealized P&L: \${balance.unrealizedPnL} \${balance.currency}`);
 const positions = await account.getPositions();
 
 positions.forEach(position => {
-  console.log(`Position \${position.id}:`);
-  console.log(`  Instrument: \${position.uic}`);
-  console.log(`  Quantity: \${position.quantity}`);
-  console.log(`  Price: \${position.price}`);
-  console.log(`  Value: \${position.value} \${position.currency}`);
-  console.log(`  Status: \${position.status}`);
+  console.log(`Position ${position.id}:`);
+  console.log(`  Instrument: ${position.uic}`);
+  console.log(`  Quantity: ${position.quantity}`);
+  console.log(`  Price: ${position.price}`);
+  console.log(`  Value: ${position.value} ${position.currency}`);
+  console.log(`  Status: ${position.status}`);
 });
 
 // Get net positions (aggregated)
@@ -163,11 +163,11 @@ const stopOrder = await account.sell(
 const orders = await account.getOrders();
 
 orders.forEach(order => {
-  console.log(`Order \${order.id}:`);
-  console.log(`  Type: \${order.type} \${order.order_type}`);
-  console.log(`  Price: \${order.price}`);
-  console.log(`  Quantity: \${order.quantity}`);
-  console.log(`  Status: \${order.status}`);
+  console.log(`Order ${order.id}:`);
+  console.log(`  Type: ${order.type} ${order.order_type}`);
+  console.log(`  Price: ${order.price}`);
+  console.log(`  Quantity: ${order.quantity}`);
+  console.log(`  Status: ${order.status}`);
 });
 
 // Modify an existing order
@@ -314,7 +314,7 @@ async function tradingExample() {
 
   // Check balance
   const balance = await account.getBalance();
-  console.log(`Available: \${balance.cashAvailable} \${balance.currency}`);
+  console.log(`Available: ${balance.cashAvailable} ${balance.currency}`);
 
   // Pre-check an order
   const preCheck = await client.preCheckOrder({
@@ -349,7 +349,7 @@ async function tradingExample() {
   // Monitor positions
   const positions = await account.getPositions();
   positions.forEach(pos => {
-    console.log(`Position \${pos.id}: \${pos.quantity} @ \${pos.price}`);
+    console.log(`Position ${pos.id}: ${pos.quantity} @ ${pos.price}`);
   });
 
   // Modify the order if needed
@@ -374,22 +374,22 @@ async function monitorPortfolio() {
   const accounts = await client.getAccounts();
 
   for (const account of accounts) {
-    console.log(`\\nAccount: \${account.id} (\${account.currency})`);
+    console.log(`\\nAccount: ${account.id} (${account.currency})`);
 
     const balance = await account.getBalance();
-    console.log(`  Cash Available: \${balance.cashAvailable}`);
-    console.log(`  Total Value: \${balance.totalValue}`);
-    console.log(`  Unrealized P&L: \${balance.unrealizedPnL}`);
+    console.log(`  Cash Available: ${balance.cashAvailable}`);
+    console.log(`  Total Value: ${balance.totalValue}`);
+    console.log(`  Unrealized P&L: ${balance.unrealizedPnL}`);
 
     const positions = await account.getPositions();
-    console.log(`  Open Positions: \${positions.length}`);
+    console.log(`  Open Positions: ${positions.length}`);
 
     positions.forEach(pos => {
-      console.log(`    \${pos.uic}: \${pos.quantity} @ \${pos.price}`);
+      console.log(`    ${pos.uic}: ${pos.quantity} @ ${pos.price}`);
     });
 
     const orders = await account.getOrders();
-    console.log(`  Active Orders: \${orders.length}`);
+    console.log(`  Active Orders: ${orders.length}`);
   }
 }
 ```
